@@ -241,9 +241,16 @@ $('#generate-btn').addEventListener('click', async (event) => {
   const invalid = validateAriaFields()
   if (invalid) return
 
-  const reasons = getReasons()
-  const pdfBlob = await generatePdf(getProfile(), reasons)
+  const profile = getProfile()
 
+  if ($('#checkbox-save').checked) {
+    saveProfile(profile)
+  } else {
+    clearProfile()
+  }
+
+  const reasons = getReasons()
+  const pdfBlob = await generatePdf(profile, reasons)
   const creationInstant = new Date()
   const creationDate = creationInstant.toLocaleDateString('fr-CA')
   const creationHour = creationInstant
@@ -334,6 +341,60 @@ function validateAriaFields () {
     }
   }).some(x => x === 1)
 }
+
+const SAVE_ID = 'save'
+const SAVED_FIELDS = [
+  'firstname',
+  'lastname',
+  'address',
+  'town',
+  'zipcode',
+  'lieunaissance',
+  'birthday',
+]
+
+function saveProfile (profile) {
+  SAVED_FIELDS.forEach((field) => {
+    localStorage.setItem(field, profile[field])
+  })
+  localStorage.setItem(SAVE_ID, '1')
+}
+
+function loadProfile () {
+  const profile = SAVED_FIELDS.reduce(
+    (acc, field) => ({
+      ...acc,
+      [field]: localStorage.getItem(field),
+    }),
+    {},
+  )
+
+  return profile
+}
+
+function clearProfile () {
+  SAVED_FIELDS.forEach((field) => {
+    localStorage.removeItem(field)
+  })
+  localStorage.removeItem(SAVE_ID)
+}
+
+function prefill () {
+  const hasProfileSave = localStorage.getItem(SAVE_ID)
+  if (hasProfileSave) {
+    const profile = loadProfile()
+
+    SAVED_FIELDS.forEach((field) => {
+      const value = profile[field]
+      if (value) {
+        $(`#field-${field}`).value = value
+      }
+      $('#checkbox-save').checked = true
+    })
+  }
+}
+
+prefill();
 
 (function addVersion () {
   document.getElementById(
